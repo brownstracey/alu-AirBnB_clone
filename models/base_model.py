@@ -10,7 +10,7 @@ from datetime import datetime
 
 class BaseModel:
     """Defines common attributes/methods for other classes."""
-   
+
     def __init__(self):
         """Initialize the BaseModel with unique ID, created_at, and updated_at."""
         self.id = str(uuid.uuid4())
@@ -37,3 +37,4 @@ class BaseModel:
         obj_dict["created_at"] = self.created_at.isoformat()
         obj_dict["updated_at"] = self.updated_at.isoformat()
         return obj_dict
+    
