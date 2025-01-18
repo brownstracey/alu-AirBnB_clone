@@ -11,11 +11,18 @@ from datetime import datetime
 class BaseModel:
     """Defines common attributes/methods for other classes."""
 
-    def __init__(self):
-        """Initialize the BaseModel with unique ID, created_at, and updated_at."""
+    def __init__(self, *args, **kwargs):
+        """initialize the data model"""
+        time_format = "%Y-%m-%dT%H:%M:%S.%f"
         self.id = str(uuid.uuid4())
         self.created_at = datetime.now()
-        self.updated_at = self.created_at
+        self.updated_at = datetime.now()
+        if kwargs:
+            for key, value in kwargs.items():
+                if key == "created_at" or key == "updated_at":
+                    setattr(self, key, datetime.strptime(value, time_format))
+                elif key != "__class__":
+                    setattr(self, key, value)
 
 
     def __str__(self):
