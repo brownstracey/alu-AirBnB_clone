@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+"""Command interpreter for HBNB project."""
 import cmd
 
 class HBNBCommand(cmd.Cmd):
