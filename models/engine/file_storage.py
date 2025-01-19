@@ -1,70 +1,114 @@
-#!/usr/bin/python3
-"""
-Module for serializing and deserializing data
-"""
-import json
+""" This module contains the test cases for the FileStorage class. """
+
+import unittest
 import os
+import models
 from models.base_model import BaseModel
+from models.engine.file_storage import FileStorage
 
-class FileStorage:
+class TestFileStorageInstantiation(unittest.TestCase):
     """
-    FileStorage class for storing, serializing and deserializing data
+    Test class for testing the instantiation of the FileStorage class.
     """
-    __file_path = "file.json"
 
-    __objects = {}
-
-    def new(self, obj):
+    def test_file_storage_instantiation_no_args(self):
         """
-        Sets an object in the __objects dictionary with a key of 
-        <obj class name>.id.
+        Test that FileStorage can be instantiated with no arguments
         """
-        obj_cls_name = obj.__class__.__name__
+        self.assertEqual(type(FileStorage()), FileStorage)
 
-        key = "{}.{}".format(obj_cls_name, obj.id)
-
-        FileStorage.__objects[key] = obj
-
-
-    def all(self):
+    def test_file_torage_with_args(self):
         """
-        Returns the __objects dictionary. 
-        It provides access to all the stored objects.
+        Test that FileStorage cannot be instantiated with arguments
         """
-        return  FileStorage.__objects
+        self.assertRaises(TypeError, FileStorage, None)
 
-
-    def save(self):
+    def test_storage_initializes(self):
+        """ Test that the storage variable in the models module is an instance
+        of the FileStorage class.
         """
-        Serializes the __objects dictionary into 
-        JSON format and saves it to the file specified by __file_path.
+
+        self.assertEqual(type(models.storage), FileStorage)
+
+class TestFileStorage(unittest.TestCase):
+    """
+    Test class for testing the FileStorage class.
+    """
+
+    def setUp(self):
         """
-        all_objs = FileStorage.__objects
-
-        obj_dict = {}
-
-        for obj in all_objs.keys():
-            obj_dict[obj] = all_objs[obj].to_dict()
-
-        with open(FileStorage.__file_path, "w", encoding="utf-8") as file:
-            json.dump(obj_dict, file)
-
-    def reload(self):
+        Set up a test environment with a temporary file for testing file storage
         """
-        This method deserializes the JSON file
+        self.test_file = "test_file.json"
+
+    def tearDown(self):
         """
-        if os.path.isfile(FileStorage.__file_path):
-            with open(FileStorage.__file_path, "r", encoding="utf-8") as file:
-                try:
-                    obj_dict = json.load(file)
+        Clean up the test environment by removing the temporary file
+        """
+        if os.path.exists(self.test_file):
+            os.remove(self.test_file)
 
-                    for key, value in obj_dict.items():
-                        class_name, obj_id = key.split('.')
+    def test_all_storage_returns_dictionary(self):
+        """
+        Test if the all() method returns a dictionary.
+        """
+        self.assertEqual({}, models.storage.all())
 
-                        cls = eval(class_name)
+    def test_new(self):
+        """
+        Test that the new() method adds a new object to the storage dictionary.
+        """
+        obj = BaseModel()
+        models.storage.new(obj)
+        self.assertIn(f"BaseModel.{obj.id}", models.storage.all())
 
-                        instance = cls(**value)
+    def test_new_with_args(self):
+        """Test that the new() method raises TypeError when given additional
+        arguments."""       
+        self.assertRaises(TypeError, models.storage.new, 1)
 
-                        FileStorage.__objects[key] = instance
-                except Exception:
-                    pass
+    def test_new_with_none(self):
+        """
+        Test that creating a new object with None raises AttributeError. This
+        ensures that the new() method does not allow None as an argument.
+        """
+        with self.assertRaises(AttributeError):
+            models.storage.new(None)
+
+    def test_save_and_reload(self):
+        """
+        Test that the save() method saves objects to a file and then reloads
+        them back into the storage dictionary when the reload() method is
+        called.
+        """
+        obj1 = BaseModel()
+        obj2 = BaseModel()
+        models.storage.new(obj1)
+        models.storage.new(obj2)
+        models.storage.save()
+
+        new_storage = FileStorage()
+        new_storage.reload()
+
+        # Check if the reloaded objects match the original objects
+        self.assertTrue(new_storage.all().get("BaseModel.{}".format(obj1.id)) is not None)
+        self.assertTrue(new_storage.all().get("BaseModel.{}".format(obj2.id)) is not None)
+
+    def test_save_to_file(self):
+        """
+        Test saving objects to a file and check if the file is created.
+        """
+        obj = BaseModel()
+        models.storage.new(obj)
+        models.storage.save()
+        self.assertTrue(os.path.exists(models.storage._FileStorage__file_path))
+
+    def test_reload_empty_file(self):
+        """
+        Test that the reload() method raises TypeError when the file is empty or does not exist
+        """
+        with self.assertRaises(TypeError):
+            models.storage.reload()
+
+if __name__ == "__main__":
+    unittest.main()
